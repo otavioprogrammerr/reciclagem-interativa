@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reciclagem Interativa</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      background: #fff;
+    }
+    header {
+      background: #28a745;
+      color: white;
+      padding: 15px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    header img {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+    }
+    .app {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #f9f9f9;
+    }
+    .container {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      text-align: center;
+      width: 90%;
+      max-width: 400px;
+    }
+    input {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 16px;
+    }
+    button {
+      padding: 12px;
+      margin: 10px;
+      border: none;
+      border-radius: 8px;
+      background: #28a745;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+      width: 100%;
+    }
+    button:disabled {
+      background: #aaa;
+    }
+    .hidden { display: none; }
+    .sidebar {
+      background: #222;
+      color: white;
+      padding: 15px;
+      text-align: center;
+    }
+    .sidebar h2 {
+      margin-top: 0;
+    }
+    .lixo-opcao {
+      display: inline-block;
+      margin: 10px;
+      padding: 15px;
+      background: #007bff;
+      color: white;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    @media (max-width: 600px) {
+      body {
+        flex-direction: column;
+      }
+      .app {
+        flex: none;
+        height: auto;
+        padding: 20px 0;
+      }
+      .sidebar {
+        flex: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <img src="https://thumbs.dreamstime.com/b/vetor-de-%C3%ADcone-perfil-do-avatar-padr%C3%A3o-foto-usu%C3%A1rio-m%C3%ADdia-social-183042379.jpg" alt="perfil">
+    <span id="nomeUsuario"><b>Usuário</b></span>
+  </header>
+
+  <div class="app">
+    <div class="container" id="loginScreen">
+      <h2>Login</h2>
+      <input type="number" placeholder="CPF" id="cpf" inputmode="numeric" pattern="[0-9]*"><br>
+      <input type="password" placeholder="Senha" id="senha"><br>
+      <button onclick="login()">Entrar</button>
+    </div>
+
+    <div class="container hidden" id="lixoScreen">
+      <h2>Qual o tipo do lixo que irá reciclar?</h2>
+      <div class="lixo-opcao" onclick="reciclar('papel')">Papel</div>
+      <div class="lixo-opcao">Plástico</div>
+      <div class="lixo-opcao">Metal</div>
+      <div class="lixo-opcao">Vidro</div>
+      <div class="lixo-opcao">Orgânico</div>
+      <div class="lixo-opcao">Não Reciclável</div>
+    </div>
+
+    <div class="container hidden" id="aguardandoScreen">
+      <h2>Aguardando o lixo ser descartado...</h2>
+    </div>
+
+    <div class="container hidden" id="resultadoScreen">
+      <h2>Você descartou:</h2>
+      <img src="https://png.pngtree.com/png-clipart/20240731/original/pngtree-tossed-crumpled-paper-ball-concept-flat-design-isolated-png-image_15669748.png" alt="bola de papel amassada" width="100"><br>
+      <p>Papel</p>
+      <p id="pontosMsg"></p>
+      <button onclick="continuarDescarte()">Continuar descarte</button>
+      <button onclick="finalizar()">Finalizar</button>
+    </div>
+  </div>
+
+  <div class="sidebar">
+    <h2>Minha Conta</h2>
+    <p><b>Pontos acumulados:</b> <span id="totalPontos">0</span></p>
+    <p><b>Total de lixo descartado:</b> <span id="totalLixo">0</span></p>
+  </div>
+
+  <script>
+    let usuarios = JSON.parse(localStorage.getItem("usuarios")) || {};
+    let usuarioAtual = null;
+
+    function login() {
+      const cpf = document.getElementById('cpf').value;
+      const senha = document.getElementById('senha').value;
+
+      if (!cpf || !senha) {
+        alert("Preencha CPF e senha!");
+        return;
+      }
+
+      if (!usuarios[cpf]) {
+        usuarios[cpf] = { senha: senha, pontos: 0, lixo: 0, nome: "Usuário " + cpf };
+      }
+
+      if (usuarios[cpf].senha !== senha) {
+        alert("Senha incorreta!");
+        return;
+      }
+
+      usuarioAtual = cpf;
+      document.getElementById('nomeUsuario').innerText = usuarios[cpf].nome;
+      atualizarSidebar();
+
+      document.getElementById('loginScreen').classList.add('hidden');
+      document.getElementById('lixoScreen').classList.remove('hidden');
+
+      localStorage.setItem("usuarios", JSON.stringify(usuarios));
+    }
+
+    function reciclar(tipo) {
+      if (tipo !== 'papel') return;
+
+      document.getElementById('lixoScreen').classList.add('hidden');
+      document.getElementById('aguardandoScreen').classList.remove('hidden');
+
+      setTimeout(() => {
+        document.getElementById('aguardandoScreen').classList.add('hidden');
+        document.getElementById('resultadoScreen').classList.remove('hidden');
+        let pontos = Math.floor(Math.random() * 10) + 1;
+        usuarios[usuarioAtual].pontos += pontos;
+        usuarios[usuarioAtual].lixo++;
+        document.getElementById('pontosMsg').innerText = "Você ganhou " + pontos + " pontos!";
+        atualizarSidebar();
+        localStorage.setItem("usuarios", JSON.stringify(usuarios));
+      }, 12000);
+    }
+
+    function continuarDescarte() {
+      document.getElementById('resultadoScreen').classList.add('hidden');
+      document.getElementById('lixoScreen').classList.remove('hidden');
+    }
+
+    function finalizar() {
+      document.getElementById('resultadoScreen').classList.add('hidden');
+      document.getElementById('loginScreen').classList.remove('hidden');
+      usuarioAtual = null;
+    }
+
+    function atualizarSidebar() {
+      if (usuarioAtual) {
+        document.getElementById('totalPontos').innerText = usuarios[usuarioAtual].pontos;
+        document.getElementById('totalLixo').innerText = usuarios[usuarioAtual].lixo;
+      }
+    }
+  </script>
+</body>
+</html>
